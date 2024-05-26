@@ -20,7 +20,7 @@ Antes de começar, certifique-se de ter as seguintes ferramentas instaladas na s
 
 - **Java JDK 17**: Você pode baixá-lo [aqui](https://www.oracle.com/br/java/technologies/downloads/#java17).
 - **Maven (Opcional)**: Você pode baixá-lo [aqui](https://dlcdn.apache.org/maven/maven-3/3.9.4/binaries/apache-maven-3.9.4-bin.zip), mas é opcional caso queira compilar manualmente o projeto.
-- **Git (Opcional)**: Caso não queira ter o Git instalado, basta fazer o download do projeto [aqui](https://git-scm.com/downloads).
+- **Git (Opcional)**: Caso não queira ter o Git instalado, basta fazer o download do projeto [aqui]([https://git-scm.com/downloads](https://github.com/stegel-felipe/apiMovies/archive/refs/heads/main.zip)).
 - **Postman (Opcional)**: Para testar as requisições da API, você pode baixá-lo [aqui](https://www.postman.com/downloads/).
 
 ## Configuração
