@@ -34,7 +34,7 @@ Esse arquivo deve estar no dirétorio ```src/main/resources/data```.
 
 ## Running os testes
 
-Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApplication``` ou através do comando maven: ```mvn test```
+Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApplicationTest``` ou através do comando maven: ```mvn test```
 
 ## Acessando o Banco de Dados
 
@@ -42,10 +42,10 @@ Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApp
 
 2. Para se conectar ao banco de dados, não é necessário inserir uma senha.
 
-    -Driver Class: org.h2.Driver
-    -JDBC URL: jdbc:h2:mem:indicadores
-    -User name: sa
-    -Password:
+    Driver Class: org.h2.Driver <br/>
+    JDBC URL: jdbc:h2:mem:indicadores <br/>
+    User name: sa <br/>
+    Password:
 
 ## REST Api
 
