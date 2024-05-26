@@ -32,7 +32,8 @@ Executar a classe ``` MoviesWebServiceApplication ``` para subir a API que ficar
 Ao executar esta classe e subir a aplicação o sistema irá invocar o método ```importMoviesFromCSV``` da classe ```MovieService``` importando o arquivo CSV de filmes.
 Esse arquivo deve estar no dirétorio ```src/main/resources/data```.
 
-#### Running the tests
+## Running os testes
+
 Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApplication``` ou através do comando maven: ```mvn test```
 
 ## Acessando o Banco de Dados
@@ -41,10 +42,10 @@ Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApp
 
 2. Para se conectar ao banco de dados, não é necessário inserir uma senha.
 
-    Driver Class: org.h2.Driver
-    JDBC URL: jdbc:h2:mem:indicadores
-    User name: sa
-    Password:
+    -Driver Class: org.h2.Driver
+    -JDBC URL: jdbc:h2:mem:indicadores
+    -User name: sa
+    -Password:
 
 ## REST Api
 
