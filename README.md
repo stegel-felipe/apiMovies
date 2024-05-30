@@ -20,7 +20,7 @@ Antes de começar, certifique-se de ter as seguintes ferramentas instaladas na s
 
 - **Java JDK 17**: Você pode baixá-lo [aqui](https://www.oracle.com/br/java/technologies/downloads/#java17).
 - **Maven (Opcional)**: Você pode baixá-lo [aqui](https://dlcdn.apache.org/maven/maven-3/3.9.4/binaries/apache-maven-3.9.4-bin.zip), mas é opcional caso queira compilar manualmente o projeto.
-- **Git (Opcional)**: Caso não queira ter o Git instalado, basta fazer o download do projeto [aqui](https://git-scm.com/downloads).
+- **Git (Opcional)**: Caso não queira ter o Git instalado, basta fazer o download do projeto [aqui](https://github.com/stegel-felipe/apiMovies/archive/refs/heads/main.zip).
 - **Postman (Opcional)**: Para testar as requisições da API, você pode baixá-lo [aqui](https://www.postman.com/downloads/).
 
 ## Configuração
@@ -32,8 +32,9 @@ Executar a classe ``` MoviesWebServiceApplication ``` para subir a API que ficar
 Ao executar esta classe e subir a aplicação o sistema irá invocar o método ```importMoviesFromCSV``` da classe ```MovieService``` importando o arquivo CSV de filmes.
 Esse arquivo deve estar no dirétorio ```src/main/resources/data```.
 
-#### Running the tests
-Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApplication``` ou através do comando maven: ```mvn test```
+## Running os testes
+
+Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApplicationTest``` ou através do comando maven: ```mvn test```
 
 ## Acessando o Banco de Dados
 
@@ -41,9 +42,9 @@ Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApp
 
 2. Para se conectar ao banco de dados, não é necessário inserir uma senha.
 
-    Driver Class: org.h2.Driver
-    JDBC URL: jdbc:h2:mem:indicadores
-    User name: sa
+    Driver Class: org.h2.Driver <br/>
+    JDBC URL: jdbc:h2:mem:indicadores <br/>
+    User name: sa <br/>
     Password:
 
 
