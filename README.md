@@ -46,6 +46,7 @@ Para rodar os testes de integração basta rodar a classe ```MoviesWebServiceApp
     User name: sa
     Password:
 
+
 ## REST Api
 
 Para testar a API, pode utilizar o Postman para testar a requisição. Abaixo está um exemplo de como fazer uma requisição:
@@ -55,6 +56,9 @@ Para testar a API, pode utilizar o Postman para testar a requisição. Abaixo es
 - Descrição: Retorna o produtor com maior intervalo entre dois prêmios consecutivos e o produtor que obteve dois prêmios mais rápido.
 
 Pode também acessar via browser que irá trazer o resultado: `http://localhost:8080/api/movies/interval`
+
+### Acessando o Swagger
+Após a aplicação estiver sendo executada, acesse a página do [Swagger](http://localhost:8080/swagger-ui.html)r, onde poderá ver uma documentação com os detalhes do endpoint.
 
 
 ## Autor

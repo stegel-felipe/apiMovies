@@ -1,75 +1,40 @@
 package com.indicadores.filmes;
 
-import com.indicadores.filmes.model.IntervalResponse;
-import com.indicadores.filmes.model.Movie;
-import com.indicadores.filmes.repository.MovieRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.indicadores.filmes.dto.ResponseDTO;
+import com.indicadores.filmes.service.MovieService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 public class MoviesWebServiceApplicationTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private MovieService movieService;
 
-    @Autowired
-    private MovieRepository movieRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        movieRepository.deleteAll();
-
-        InputStream inputStream = getClass().getResourceAsStream("/data/movielist.csv");
-        assert inputStream != null;
-
-        // Load CSV data into the database
-        InputStreamReader reader = new InputStreamReader(inputStream);
-        Iterable<CSVRecord> records = CSVFormat.DEFAULT
-                .withDelimiter(';')
-                .withFirstRecordAsHeader()
-                .parse(reader);
-        for (CSVRecord record : records) {
-            Movie movie = new Movie();
-            movie.setYear(Integer.parseInt(record.get("year")));
-            movie.setTitle(record.get("title"));
-            movie.setStudios(record.get("studios"));
-            movie.setProducers(record.get("producers"));
-            movie.setWinner("yes".equalsIgnoreCase(record.get("winner")));
-            movieRepository.save(movie);
-        }
-    }
-
+    /**
+     * Testa o cálculo dos intervalos de prêmios usando o serviço MovieService.
+     * Verifica se os intervalos mínimos e máximos esperados são encontrados no resultado.
+     */
     @Test
-    void testGetProducerWithMaxMinInterval() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/movies/interval"))
-                .andExpect(status().isOk())
-                .andReturn();
+    public void testCalculateIntervals() {
+        // Calcula os intervalos de prêmios
+        ResponseDTO responseDto = movieService.calculateIntervals();
 
-        String jsonResponse = result.getResponse().getContentAsString();
-        IntervalResponse intervalResponse = objectMapper.readValue(jsonResponse, IntervalResponse.class);
+        // Verifica se o intervalo mínimo (1) e o intervalo máximo (13) estão presentes no resultado.
+        boolean minIntervalFound = responseDto.getMin().stream()
+                .anyMatch(producerResponseDto -> producerResponseDto.getInterval() == 1);
 
-        assertThat(intervalResponse).isNotNull();
-        assertThat(intervalResponse.getMin()).isNotEmpty();
-        assertThat(intervalResponse.getMax()).isNotEmpty();
+        boolean maxIntervalFound = responseDto.getMax().stream()
+                .anyMatch(producerResponseDto -> producerResponseDto.getInterval() == 13);
+
+        // Asserções para verificar se os intervalos foram encontrados no resultado.
+        assertTrue(minIntervalFound, "Expected minimum interval of 1 was not found.");
+        assertTrue(maxIntervalFound, "Expected maximum interval of 13 was not found.");
     }
 }

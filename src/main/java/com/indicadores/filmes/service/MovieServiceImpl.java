@@ -1,98 +1,158 @@
 package com.indicadores.filmes.service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.springframework.stereotype.Service;
-
-import com.indicadores.filmes.model.Interval;
-import com.indicadores.filmes.model.IntervalResponse;
+import com.indicadores.filmes.dto.ProducerResponseDTO;
+import com.indicadores.filmes.dto.ResponseDTO;
 import com.indicadores.filmes.model.Movie;
 import com.indicadores.filmes.repository.MovieRepository;
+import com.indicadores.filmes.service.MovieService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class MovieServiceImpl implements MovieService {
+
 	private final MovieRepository movieRepository;
 
-	@Override
-	public IntervalResponse calculateIntervals() {
-		List<Movie> movies = movieRepository.findAll();
-
-		// Filtra apenas os filmes vencedores
-		List<Movie> winners = new ArrayList<>();
-		for (Movie movie : movies) {
-			if (movie.isWinner()) {
-				winners.add(movie);
-			}
-		}
-
-		// Mapeia produtores aos anos em que ganharam
-		Map<String, List<Integer>> producerWins = new HashMap<>();
-		for (Movie winner : winners) {
-			String[] producers = winner.getProducers().split(", ");
-			for (String producer : producers) {
-				producerWins.computeIfAbsent(producer, k -> new ArrayList<>()).add(winner.getYear());
-			}
-		}
-
-		List<Interval> minIntervals = new ArrayList<>();
-		List<Interval> maxIntervals = new ArrayList<>();
-
-		// Calcula os intervalos para cada produtor
-		for (Map.Entry<String, List<Integer>> entry : producerWins.entrySet()) {
-			String producer = entry.getKey();
-			List<Integer> years = entry.getValue();
-			Collections.sort(years);
-
-			for (int i = 1; i < years.size(); i++) {
-				int interval = years.get(i) - years.get(i - 1);
-				Interval currentInterval = new Interval(null, producer, interval, years.get(i - 1), years.get(i));
-
-				if (minIntervals.isEmpty() || interval < minIntervals.get(0).getInterval()) {
-					minIntervals.clear();
-					minIntervals.add(currentInterval);
-				} else if (interval == minIntervals.get(0).getInterval()) {
-					minIntervals.add(currentInterval);
-				}
-
-				if (maxIntervals.isEmpty() || interval > maxIntervals.get(0).getInterval()) {
-					maxIntervals.clear();
-					maxIntervals.add(currentInterval);
-				} else if (interval == maxIntervals.get(0).getInterval()) {
-					maxIntervals.add(currentInterval);
-				}
-			}
-		}
-		return new IntervalResponse(minIntervals, maxIntervals);
+	@Autowired
+	public MovieServiceImpl(MovieRepository movieRepository) {
+		this.movieRepository = movieRepository;
 	}
 
-	@Override
-	public void importMoviesFromCSV(InputStream inputStream) {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-			Iterable<CSVRecord> records = CSVFormat.DEFAULT.withDelimiter(';').withFirstRecordAsHeader().parse(reader);
-			for (CSVRecord record : records) {
-				Movie movie = new Movie();
-				movie.setYear(Integer.parseInt(record.get("year")));
-				movie.setTitle(record.get("title"));
-				movie.setStudios(record.get("studios"));
-				movie.setProducers(record.get("producers"));
-				movie.setWinner("yes".equalsIgnoreCase(record.get("winner")));
-				movieRepository.save(movie);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	/**
+	 * Calcula os intervalos entre os anos dos filmes para cada produtor.
+	 *
+	 * @return Um objeto ResponseDto que contém os produtores com o menor e o maior intervalo.
+	 */
+	public ResponseDTO calculateIntervals() {
+		List<Movie> movies = getMoviesWinners();
+
+		return buildResponseDto(
+				calculateInterval(movies, false),
+				calculateInterval(movies, true));
 	}
+
+	/**
+	 * Constrói um objeto ResponseDto a partir das listas de produtores com menor e maior intervalo.
+	 *
+	 * @param producerWithMinInterval Lista de produtores com menor intervalo.
+	 * @param producerWithMaxInterval Lista de produtores com maior intervalo.
+	 * @return Um objeto ResponseDto.
+	 */
+	private ResponseDTO buildResponseDto(List<ProducerResponseDTO> producerWithMinInterval, List<ProducerResponseDTO> producerWithMaxInterval) {
+		return ResponseDTO.builder()
+				.min(producerWithMinInterval)
+				.max(producerWithMaxInterval)
+				.build();
+	}
+
+	/**
+	 * Calcula os intervalos entre os anos dos filmes para cada produtor.
+	 *
+	 * @param movies      Lista de filmes.
+	 * @param maxInterval Define se deve calcular o intervalo máximo (true) ou mínimo (false).
+	 * @return Uma lista de objetos ProducerResponseDto com os intervalos calculados.
+	 */
+	private List<ProducerResponseDTO> calculateInterval(List<Movie> movies, boolean maxInterval) {
+		Map<String, List<Movie>> moviesByProducer = groupMoviesByProducer(movies);
+		List<ProducerResponseDTO> response = new ArrayList<>();
+		int intervalThreshold = maxInterval ? -1 : Integer.MAX_VALUE;
+
+		for (Map.Entry<String, List<Movie>> entry : moviesByProducer.entrySet()) {
+			List<Movie> relevantMovies = entry.getValue();
+			if (relevantMovies.size() >= 2) {
+				relevantMovies.sort(Comparator.comparingInt(Movie::getYearMovie));
+
+				for (int i = 1; i < relevantMovies.size(); i++) {
+					int interval = relevantMovies.get(i).getYearMovie() - relevantMovies.get(i - 1).getYearMovie();
+
+					if (shouldUpdateInterval(maxInterval, interval, intervalThreshold)) {
+						intervalThreshold = interval;
+						ProducerResponseDTO producerResponseDto = createProducerResponse(entry.getKey(), interval, relevantMovies.get(i - 1), relevantMovies.get(i));
+						response.clear(); // Limpar a lista para adicionar apenas o produtor com menor/maior intervalo
+						response.add(producerResponseDto);
+					} else if (interval == intervalThreshold) {
+						ProducerResponseDTO producerResponseDto = createProducerResponse(entry.getKey(), interval, relevantMovies.get(i - 1), relevantMovies.get(i));
+						response.add(producerResponseDto);
+					}
+				}
+			}
+		}
+		return response;
+	}
+
+	/**
+	 * Verifica se o intervalo deve ser atualizado com base no tipo de intervalo (maxInterval), intervalo calculado e threshold atual.
+	 *
+	 * @param maxInterval        Define se é um intervalo máximo (true) ou mínimo (false).
+	 * @param interval           Intervalo calculado.
+	 * @param intervalThreshold  Threshold atual.
+	 * @return true se o intervalo deve ser atualizado, caso contrário, false.
+	 */
+	private boolean shouldUpdateInterval(boolean maxInterval, int interval, int intervalThreshold) {
+		return (maxInterval && interval > intervalThreshold) || (!maxInterval && interval < intervalThreshold);
+	}
+
+	/**
+	 * Cria um objeto ProducerResponseDto com informações sobre o produtor e o intervalo.
+	 *
+	 * @param producer        Nome do produtor.
+	 * @param interval        Intervalo calculado.
+	 * @param previousMovie   Filme anterior.
+	 * @param followingMovie  Filme seguinte.
+	 * @return Um objeto ProducerResponseDto.
+	 */
+	private ProducerResponseDTO createProducerResponse(String producer, int interval, Movie previousMovie, Movie followingMovie) {
+		return ProducerResponseDTO.builder()
+				.producer(producer)
+				.interval(interval)
+				.previousWin(previousMovie.getYearMovie())
+				.followingWin(followingMovie.getYearMovie())
+				.build();
+	}
+
+	/**
+	 * Agrupa a lista de filmes por produtor em um Map, levando em consideração que o producer esteja envolvido em outro filme juntamente com outro produtor.
+	 *
+	 * @param movies Lista de filmes.
+	 * @return Um mapa que agrupa os filmes pelo nome do produtor.
+	 */
+	private Map<String, List<Movie>> groupMoviesByProducer(List<Movie> movies) {
+		return movies.stream()
+				.flatMap(movie -> splitProducers(movie).stream().map(producer -> new AbstractMap.SimpleEntry<>(producer, movie)))
+				.collect(Collectors.groupingBy(
+						AbstractMap.SimpleEntry::getKey,
+						Collectors.mapping(AbstractMap.SimpleEntry::getValue, Collectors.toList())
+				));
+	}
+
+	/**
+	 * Divide os nomes dos produtores se houver mais de um, considerando vírgulas e " and ".
+	 *
+	 * @param movie Filme.
+	 * @return Lista de nomes de produtores.
+	 */
+	private List<String> splitProducers(Movie movie) {
+		List<String> producers = new ArrayList<>();
+		String[] producerNames = movie.getProducers().split(",| and ");
+		
+
+		for (String producer : producerNames) {
+			producers.add(producer.trim());
+		}
+
+		return producers;
+	}
+
+	/**
+	 * Obtém a lista de filmes vencedores.
+	 *
+	 * @return Uma lista de objetos MovieWinnerResponseDto.
+	 */
+	private List<Movie> getMoviesWinners() {
+		return movieRepository.findAllByWinnerTrue();
+	}
+
 }
